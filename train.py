@@ -29,7 +29,7 @@ def get_args():
 # -------------------------
 def train_one_epoch(model, loader, optimizer, device, epoch, total_epochs, scheduler):
     model.train()
-    metric = MeanAveragePrecision(iou_type="bbox")  # 初始化 metric
+    metric = MeanAveragePrecision(iou_type="bbox")
     total_loss = 0.0
     total_batches = len(loader)
     torch.cuda.empty_cache()
@@ -38,6 +38,15 @@ def train_one_epoch(model, loader, optimizer, device, epoch, total_epochs, sched
         images = list(img.to(device) for img in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
+        # 過濾掉無 bbox 的樣本
+        filtered = [
+            (img, tgt) for img, tgt in zip(images, targets)
+            if tgt["boxes"].numel() > 0 and tgt["boxes"].shape[1] == 4
+        ]
+        if len(filtered) == 0:
+            continue  # 如果這個 batch 全部都沒有 bbox，就跳過
+        images, targets = zip(*filtered)
+
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
 
@@ -45,17 +54,14 @@ def train_one_epoch(model, loader, optimizer, device, epoch, total_epochs, sched
         losses.backward()
         optimizer.step()
 
-        # 累積 loss
         total_loss += losses.item()
 
-        # --- Compute IoU & Class Acc ---
-        # === Accuracy computation step ===
+        # --- Compute IoU & mAP ---
         model.eval()
         with torch.no_grad():
             outputs = model(images)
         model.train()
 
-        # Convert for metric
         preds = []
         gts = []
         for output in outputs:
@@ -72,7 +78,6 @@ def train_one_epoch(model, loader, optimizer, device, epoch, total_epochs, sched
 
         metric.update(preds, gts)
 
-    # 平均 loss 與 acc 統計
     avg_loss = total_loss / total_batches
     result = metric.compute()
     ap = result["map"].item()
