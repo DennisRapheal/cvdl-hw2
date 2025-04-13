@@ -31,9 +31,6 @@ def train_one_epoch(model, loader, optimizer, device, epoch, total_epochs, sched
     model.train()
     metric = MeanAveragePrecision(iou_type="bbox")  # 初始化 metric
     total_loss = 0.0
-    correct_iou = 0
-    correct_cls = 0
-    total_gt = 0
     total_batches = len(loader)
     torch.cuda.empty_cache()
 
@@ -160,6 +157,8 @@ if __name__ == '__main__':
     print("Start Training!")
     print(f"Using device: {device} | GPU name: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 
+    max_map_sum = 0.0
+    
     for epoch in range(args.num_epochs):
         train_loss, train_map, train_map50 = train_one_epoch(
             model, train_loader, optimizer, device, epoch, args.num_epochs, scheduler
@@ -172,9 +171,13 @@ if __name__ == '__main__':
         ])
         scheduler.step()
 
-        ckpt_path = os.path.join(save_path, f"{args.model_name}.pth")
-        torch.save(model.state_dict(), ckpt_path)
-        print(f" Saved checkpoint: {ckpt_path}")
+        cur_map_sum = val_map + train_map
+
+        if cur_map_sum >= max_map_sum:
+            max_map_sum = cur_map_sum
+            ckpt_path = os.path.join(save_path, f"{args.model_name}.pth")
+            torch.save(model.state_dict(), ckpt_path)
+            print(f" Saved checkpoint: {ckpt_path}")
 
     # 儲存訓練歷史
     os.makedirs(f'./weights/{args.model_name}', exist_ok=True)

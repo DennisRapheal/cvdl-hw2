@@ -52,13 +52,15 @@ def run_inference(args):
                 x1, y1, x2, y2 = box.tolist()  # COCO expects [x, y, w, h]
                 w = x2 - x1
                 h = y2 - y1
+
                 if w <= 0 or h <= 0:
                     continue
+
                 task1_output.append({
                     "image_id": int(img_id),
                     "bbox": [float(x1), float(y1), float(w), float(h)],
                     "score": float(score),
-                    "category_id": int(label) + 1 # 已經是 1~10
+                    "category_id": int(label) # 已經是 1~10
                 })
                 
             # Task 2
