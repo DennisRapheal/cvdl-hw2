@@ -3,6 +3,7 @@ import argparse
 import torch
 import json
 import pandas as pd
+import zipfile
 from tqdm import tqdm
 from model import get_model
 from utils import get_test_loader, set_batch
@@ -48,14 +49,18 @@ def run_inference(args):
             for box, score, label in zip(boxes, scores, labels):
                 if score < args.threshold:
                     continue
-                x1, y1, x2, y2 = box.tolist()
+                x1, y1, x2, y2 = box.tolist()  # COCO expects [x, y, w, h]
+                w = x2 - x1
+                h = y2 - y1
+                if w <= 0 or h <= 0:
+                    continue
                 task1_output.append({
                     "image_id": int(img_id),
-                    "bbox": [x1, y1, x2 - x1, y2 - y1],
+                    "bbox": [x1, y1, w, h],
                     "score": float(score),
-                    "category_id": int(label)
+                    "category_id": int(label)  # 已經是 1~10
                 })
-
+                
             # Task 2
             keep = scores > args.threshold
             boxes = boxes[keep]
@@ -85,6 +90,12 @@ def run_inference(args):
     csv_path = os.path.join(args.output_dir, "pred.csv")
     pd.DataFrame(task2_output).to_csv(csv_path, index=False)
     print(f"Task2 (Recognition) saved to {csv_path}")
+    
+    zip_path = os.path.join(args.output_dir, "submission.zip")
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        zipf.write(json_path, arcname="pred.json")
+        zipf.write(csv_path, arcname="pred.csv")
+    print(f"Zipped submission saved to {zip_path}")
 
 
 if __name__ == "__main__":
