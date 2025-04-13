@@ -56,9 +56,9 @@ def run_inference(args):
                     continue
                 task1_output.append({
                     "image_id": int(img_id),
-                    "bbox": [x1, y1, w, h],
+                    "bbox": [float(x1), float(y1), float(w), float(h)],
                     "score": float(score),
-                    "category_id": int(label)  # 已經是 1~10
+                    "category_id": int(label) + 1 # 已經是 1~10
                 })
                 
             # Task 2
