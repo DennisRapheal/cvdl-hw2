@@ -22,8 +22,7 @@ def run_inference(args):
     device = torch.device(args.device)
 
     # Load model
-    model = get_model(model_tpye=args.model_type, weights=args.model_path)
-    model.load_state_dict(torch.load(args.model_path, map_location=device))
+    model = get_model(model_type=args.model_type, weights_pth=args.model_path)
     model.to(device)
     model.eval()
 
