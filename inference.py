@@ -34,22 +34,31 @@ def run_inference(args):
     task1_output = []  # For pred.json
     task2_output = []  # For pred.csv
 
-    for images, image_ids in tqdm(test_loader):
+    for images, image_ids, original_sizes in tqdm(test_loader):
         images = [img.to(device) for img in images]
 
         with torch.no_grad():
             outputs = model(images)
 
-        for img_id, output in zip(image_ids, outputs):
+        for img_id, output, (orig_w, orig_h) in zip(image_ids, outputs, original_sizes):
             boxes = output["boxes"].cpu()
             scores = output["scores"].cpu()
             labels = output["labels"].cpu()
+
+            # 轉換比例（resize 是 256x256）
+            scale_x = orig_w / 256
+            scale_y = orig_h / 256
 
             # Task 1
             for box, score, label in zip(boxes, scores, labels):
                 if score < args.threshold:
                     continue
-                x1, y1, x2, y2 = box.tolist()  # COCO expects [x, y, w, h]
+                x1, y1, x2, y2 = box.tolist()
+                # 還原 bbox
+                x1 *= scale_x
+                x2 *= scale_x
+                y1 *= scale_y
+                y2 *= scale_y
                 w = x2 - x1
                 h = y2 - y1
 
@@ -60,19 +69,19 @@ def run_inference(args):
                     "image_id": int(img_id),
                     "bbox": [float(x1), float(y1), float(w), float(h)],
                     "score": float(score),
-                    "category_id": int(label) # 已經是 1~10
+                    "category_id": int(label) + 1  # ⚠️ 若訓練時是 0~9，請加 1
                 })
-                
-            # Task 2
+
+            # Task 2 保持不變，但要用還原後的 box 排序
             keep = scores > args.threshold
             boxes = boxes[keep]
             labels = labels[keep]
             if len(boxes) == 0:
                 pred_label = "-1"
             else:
-                x_coords = boxes[:, 0]
+                x_coords = boxes[:, 0] * scale_x
                 sorted_indices = x_coords.argsort()
-                sorted_labels = labels[sorted_indices]
+                sorted_labels = labels[keep][sorted_indices]
                 pred_label = ''.join(str(l.item() - 1) for l in sorted_labels)
 
             task2_output.append({

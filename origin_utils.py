@@ -86,9 +86,10 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.img_paths[idx]
         image = Image.open(img_path).convert("RGB")
+        width, height = image.size  # 原圖尺寸
         if self.transforms:
             image = self.transforms(image)
-        return image, self.image_ids[idx]
+        return image, self.image_ids[idx], (width, height)  # ⬅️ 傳回原圖尺寸
 
 # --- collate_fn ---
 def collate_fn(batch):
