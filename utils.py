@@ -19,16 +19,7 @@ _batch_size = 8  # default
 def set_batch(batch=8):
     global _batch_size
     _batch_size = batch
-
-def clip_boxes(bboxes, height, width):
-    clipped = []
-    for x_min, y_min, x_max, y_max in bboxes:
-        x_min = np.clip(x_min, 0, width - 1)
-        y_min = np.clip(y_min, 0, height - 1)
-        x_max = np.clip(x_max, x_min + 1, width)
-        y_max = np.clip(y_max, y_min + 1, height)
-        clipped.append([x_min, y_min, x_max, y_max])
-    return clipped
+    
 
 class AlbumentationsDigitCocoDataset(Dataset):
     def __init__(self, img_dir, ann_path, transform=None):
@@ -177,8 +168,7 @@ def get_train_transform():
     ], bbox_params=A.BboxParams(
         format='pascal_voc', 
         label_fields=['category_ids'], 
-        min_visibility=0.7,
-        check_each_transform=False))
+        min_visibility=0.8))
 
 
 def get_val_transform():

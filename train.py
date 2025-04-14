@@ -16,6 +16,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="Training Script Arguments")
     parser.add_argument("--model_name", type=str, default="resnext50_32x4d")
     parser.add_argument("--model_type", type=str, default="resnext50_32x4d")
+    parser.add_argument("--from_pretrained", type=str, default="")
     parser.add_argument("--num_epochs", type=int, default=50)
     parser.add_argument("--schedulerT_0", type=int, default=200)
     parser.add_argument("--schedulerT_mult", type=int, default=2)
@@ -145,7 +146,11 @@ if __name__ == '__main__':
     val_loader = get_val_loader()
 
     # Load model
-    model = get_model(args.model_type)
+    if args.from_pretrained == "":
+        model = get_model(args.model_type)
+    else:
+        model = get_model(model_type=args.model_type, weights_pth=args.from_pretrained)
+    
     model.to(device)
 
     # Optimizer / Scheduler
