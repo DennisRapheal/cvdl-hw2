@@ -44,10 +44,10 @@ class AlbumentationsDigitCocoDataset(Dataset):
         category_ids = []
         for ann in anns:
             x, y, bw, bh = ann['bbox']
-            x_min = np.clip(x, 0, w - 1)
-            y_min = np.clip(y, 0, h - 1)
-            x_max = np.clip(x + bw, x_min + 1, w)
-            y_max = np.clip(y + bh, y_min + 1, h)
+            x_min = x
+            y_min = y
+            x_max = x + w
+            y_max = y + h
             bboxes.append([x_min, y_min, x_max, y_max])
             category_ids.append(ann['category_id'])
 
@@ -99,14 +99,20 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.img_paths[idx]
         image = Image.open(img_path).convert("RGB")
+        width, height = image.size  # 原圖尺寸
         if self.transforms:
             image = self.transforms(image)
-        return image, self.image_ids[idx]
+        return image, self.image_ids[idx], (width, height)  # ⬅️ 傳回原圖尺寸
 
 
 # --- collate_fn ---
 def collate_fn(batch):
     return tuple(zip(*batch))
+
+
+def collate_fn_test(batch):
+    images, image_ids, original_sizes = zip(*batch)
+    return list(images), list(image_ids), list(original_sizes)
 
 
 # --- Transforms ---
@@ -128,9 +134,7 @@ IMG_SIZE = 256  # 建議加個統一變數
 
 def get_train_transform():
     return A.Compose([
-        A.LongestMaxSize(max_size=IMG_SIZE),
-        A.PadIfNeeded(min_height=IMG_SIZE, min_width=IMG_SIZE,
-              border_mode=cv2.BORDER_CONSTANT),
+        A.Resize(256, 256),
         A.HorizontalFlip(p=0.5),
         A.Affine(
             scale=(0.9, 1.1),
@@ -204,7 +208,7 @@ def get_val_loader():
 
 def get_test_loader():
     dataset = TestDataset(TEST_IMG_DIR, transforms=val_transform)
-    loader = DataLoader(dataset, batch_size=_batch_size, shuffle=False)
+    loader = DataLoader(dataset, batch_size=_batch_size, shuffle=False, collate_fn=collate_fn_test)
     return loader
 
 
@@ -212,7 +216,6 @@ if __name__ == '__main__':
     # Load the JSON file
     with open('./data/train.json', 'r') as file:
         data = json.load(file)
-
 
     # Print all keys (top-level)
     for key in data.keys():

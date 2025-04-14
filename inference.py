@@ -69,7 +69,7 @@ def run_inference(args):
                     "image_id": int(img_id),
                     "bbox": [float(x1), float(y1), float(w), float(h)],
                     "score": float(score),
-                    "category_id": int(label) + 1  # ⚠️ 若訓練時是 0~9，請加 1
+                    "category_id": int(label)
                 })
 
             # Task 2 保持不變，但要用還原後的 box 排序
@@ -81,14 +81,13 @@ def run_inference(args):
             else:
                 x_coords = boxes[:, 0] * scale_x
                 sorted_indices = x_coords.argsort()
-                sorted_labels = labels[keep][sorted_indices]
+                sorted_labels = labels[sorted_indices]
                 pred_label = ''.join(str(l.item() - 1) for l in sorted_labels)
 
             task2_output.append({
                 "image_id": int(img_id),
                 "pred_label": pred_label
             })
-
 
     # Save results
     os.makedirs(f'{args.output_dir}', exist_ok=True)
