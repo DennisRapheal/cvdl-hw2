@@ -19,7 +19,7 @@ _batch_size = 8  # default
 def set_batch(batch=8):
     global _batch_size
     _batch_size = batch
-    
+   
 
 class AlbumentationsDigitCocoDataset(Dataset):
     def __init__(self, img_dir, ann_path, transform=None):
@@ -43,11 +43,12 @@ class AlbumentationsDigitCocoDataset(Dataset):
         bboxes = []
         category_ids = []
         for ann in anns:
+            # albumentations will check invalid bbox(out of bound)
             x, y, bw, bh = ann['bbox']
-            x_min = x
-            y_min = y
-            x_max = x + w
-            y_max = y + h
+            x_min = np.clip(x, 0, w - 1)
+            y_min = np.clip(y, 0, h - 1)
+            x_max = np.clip(x + bw, x_min + 1, w)
+            y_max = np.clip(y + bh, y_min + 1, h)
             bboxes.append([x_min, y_min, x_max, y_max])
             category_ids.append(ann['category_id'])
 
@@ -170,9 +171,9 @@ def get_train_transform():
                     std=(0.229, 0.224, 0.225)),
         ToTensorV2()
     ], bbox_params=A.BboxParams(
-        format='pascal_voc', 
-        label_fields=['category_ids'], 
-        min_visibility=0.8))
+        format='pascal_voc',
+        label_fields=['category_ids'],
+        min_visibility=0.5))
 
 
 def get_val_transform():
@@ -217,13 +218,14 @@ if __name__ == '__main__':
     with open('./data/train.json', 'r') as file:
         data = json.load(file)
 
+
     # Print all keys (top-level)
     for key in data.keys():
         print(f"{key} cols:", end = ' ')
         for keyy in data[key][0].keys():
             print(keyy, end = ' ')
         print()
-       
+
     train_loader = get_train_loader()
     val_loader   = get_val_loader()
     test_loader  = get_test_loader()

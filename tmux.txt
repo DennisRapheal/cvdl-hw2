@@ -5,4 +5,4 @@ tmux kill-session -t cvdlhw2
 conda create --name cvdl-hw
 conda activate cvdl-hw
 
-tmux new -s cvdlhw2-2
+tmux new -s cvdlhw2-2 

@@ -30,23 +30,20 @@ class DigitCocoDataset(Dataset):
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
         anns = self.coco.loadAnns(ann_ids)
 
-
-        # 讀圖
         path = self.coco.loadImgs(img_id)[0]['file_name']
         img_path = os.path.join(self.img_dir, path)
         img = Image.open(img_path).convert("RGB")
        
-        # 取得原始圖片大小
+        # bbox transformation
         orig_w, orig_h = img.size
         target_w, target_h = 256, 256
         scale_x = target_w / orig_w
         scale_y = target_h / orig_h
 
-
-        # 處理標註
         boxes = []
         labels = []
         for ann in anns:
+            # bbox ground truth transformation
             x, y, w, h = ann['bbox']
             x_min = x * scale_x
             y_min = y * scale_y
@@ -140,8 +137,6 @@ train_transform = T.Compose([
     T.Normalize(mean=[0.485, 0.456, 0.406],
                 std=[0.229, 0.224, 0.225])
 ])
-
-
 
 
 val_transform = T.Compose([
