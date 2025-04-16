@@ -12,4 +12,4 @@ python train.py --model_name fasterrcnn_resnet50_fpn_v2 --model_type fasterrcnn_
 python train.py --model_name fasterrcnn_v2_hard_transform --model_type fasterrcnn_resnet50_fpn_v2 --transform_type hard --from_pretrained ./checkpoints/fasterrcnn_resnet50_fpn_v2.pth --batch_size 32 --num_epochs 15
 
 python inference.py --model_type resnext50_32x4d --model_path ./checkpoints/resnext50_32x4d_hard_transform_resize256.pth --output_dir resnext50_32x4d_hard_transform_resize256 --batch_size 32 --threshold 0.7
-python inference.py --model_type fasterrcnn_resnet50_fpn_v2 --model_path ./checkpoints/fasterrcnn_resnet50_fpn_v2.pth --output_dir fasterrcnn_resnet50_fpn_v2 --batch_size 32 --threshold 0.7
+python inference.py --model_type fasterrcnn_resnet50_fpn_v2 --model_path ./checkpoints/fasterrcnn_v2_hard_transform.pth --output_dir fasterrcnn_v2_hard_transform --batch_size 32 --threshold 0.7
