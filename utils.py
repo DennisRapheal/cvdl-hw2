@@ -85,7 +85,6 @@ class AlbumentationsDigitCocoDataset(Dataset):
         self.transform = transform
         self.ids = list(self.coco.imgs.keys())
 
-
     def __getitem__(self, index):
         img_id = self.ids[index]
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
@@ -120,7 +119,7 @@ class AlbumentationsDigitCocoDataset(Dataset):
             category_ids = transformed['category_ids']
         else:
             raise ValueError("Albumentations transform is required")
-        
+
         if len(bboxes) == 0:
             # return dummy tensor or skip (up to your logic)
             bboxes = [[0, 0, 1, 1]]
@@ -137,10 +136,10 @@ class AlbumentationsDigitCocoDataset(Dataset):
 
         return img_tensor, target
 
-
     def __len__(self):
         return len(self.ids)
-   
+
+
 class TestDataset(Dataset):
     def __init__(self, img_dir, transforms=None):
         self.img_dir = img_dir
@@ -165,7 +164,7 @@ class TestDataset(Dataset):
         width, height = image.size  # 原圖尺寸
         if self.transforms:
             image = self.transforms(image)
-        return image, self.image_ids[idx], (width, height)  # ⬅️ 傳回原圖尺寸
+        return image, self.image_ids[idx], (width, height)  # 傳回原圖尺寸
 
 
 # --- collate_fn ---
@@ -192,12 +191,12 @@ TRAIN_ANN_PATH = "./data/train.json"
 VAL_ANN_PATH = "./data/valid.json"
 
 
-IMG_SIZE = 256  # 建議加個統一變數
+IMG_SIZE = 256
 
 
 def get_train_transform():
     return A.Compose([
-        A.Resize(256, 256),
+        A.Resize(IMG_SIZE, IMG_SIZE),
         A.HorizontalFlip(p=0.5),
         A.Affine(
             scale=(0.9, 1.1),
@@ -240,7 +239,7 @@ def get_train_transform():
 
 def get_val_transform():
     return A.Compose([
-        A.Resize(256, 256),
+        A.Resize(IMG_SIZE, IMG_SIZE),
         A.Normalize(mean=(0.485, 0.456, 0.406),
                     std=(0.229, 0.224, 0.225)),
         ToTensorV2()
@@ -248,7 +247,7 @@ def get_val_transform():
 
 
 train_transform = T.Compose([
-    T.Resize((256, 256)),  # 固定幾何尺寸，不變形
+    T.Resize((IMG_SIZE, IMG_SIZE)),  # 固定幾何尺寸，不變形
     T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.3),
     T.RandomGrayscale(p=0.1),
     T.RandomAdjustSharpness(sharpness_factor=2, p=0.3),
@@ -288,7 +287,6 @@ def get_val_loader():
     return loader
 
 
-
 def get_test_loader():
     dataset = TestDataset(TEST_IMG_DIR, transforms=val_transform)
     loader = DataLoader(dataset, batch_size=_batch_size, shuffle=False, collate_fn=collate_fn_test)
@@ -299,7 +297,6 @@ if __name__ == '__main__':
     # Load the JSON file
     with open('./data/train.json', 'r') as file:
         data = json.load(file)
-
 
     # Print all keys (top-level)
     for key in data.keys():
